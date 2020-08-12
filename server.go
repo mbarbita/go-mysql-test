@@ -12,8 +12,14 @@ import (
 	cfgutils "github.com/mbarbita/golib-cfgutils"
 )
 
-// handle func /
+// handle func / ; /index.html ; /home
 func home(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "r.Host %v\n", r.Host)
+	fmt.Fprintf(w, "r.URL.Path %v\n", r.URL.Path)
+}
+
+// handle func /test
+func test(w http.ResponseWriter, r *http.Request) {
 
 	// parse templates
 	htmlTpl := template.Must(template.ParseGlob("templates/*.*"))
@@ -21,11 +27,11 @@ func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Tpl Name:", htmlTpl.Name())
 
 	// data for template
-	tplData := r.Host
+	var tplData = []string{"ws://" + r.Host + "/testmsg"}
 	fmt.Println(tplData)
 
 	// Execute template
-	err := htmlTpl.ExecuteTemplate(w, "index.html", tplData)
+	err := htmlTpl.ExecuteTemplate(w, "test.html", tplData[0])
 	// err := htmlTpl.Execute(w, tplData)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError),
@@ -33,8 +39,8 @@ func home(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handle func /msg
-func wsMessage(w http.ResponseWriter, r *http.Request) {
+// handle func /testmsg
+func testmsg(w http.ResponseWriter, r *http.Request) {
 
 	type WsIn struct {
 		Fa string
@@ -95,8 +101,12 @@ func main() {
 
 	cfgMap = cfgutils.ReadCfgFile("cfg.ini", false)
 
+	//routes
 	http.HandleFunc("/", home)
-	http.HandleFunc("/msg", wsMessage)
+	http.HandleFunc("/index.html", home)
+	http.HandleFunc("/home", home)
+	http.HandleFunc("/test", test)
+	http.HandleFunc("/testmsg", testmsg)
 
 	log.Println("Server listening on:", cfgMap["server"])
 	err := http.ListenAndServe(cfgMap["server"], nil)
