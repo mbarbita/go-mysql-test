@@ -27,7 +27,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// fmt.Fprintf(w, "r.URL.Path %v\n", r.URL.Path)
 
 	// Execute template
-	err := htmlTpl.ExecuteTemplate(w, "generic-page.html", tplData)
+	err := htmlTpl.ExecuteTemplate(w, "home-page.html", tplData)
 	// err := htmlTpl.Execute(w, tplData)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError),
