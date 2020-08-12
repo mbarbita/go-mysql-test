@@ -1,17 +1,6 @@
 <!doctype html>
 <html>
-
-<head>
-  <!-- Required meta tags -->
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-  <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-    integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
-  <title>ws test</title>
-</head>
-
+{{template "head.html"}}
 <body>
   <!-- Optional JavaScript -->
   <!-- jQuery first, then Popper.js, then Bootstrap JS -->
@@ -79,7 +68,41 @@
 
   <h3 id="locst" onclick="myFunction()">Click me to check local storage.</h3>
   <script>
-    {{ template "check-storage.js".}}
+    function myFunction() {
+    function storageAvailable(type) {
+        var storage;
+        try {
+            storage = window[type];
+            var x = '__storage_test__';
+            storage.setItem(x, x);
+            storage.removeItem(x);
+            return true;
+        }
+        catch (e) {
+            return e instanceof DOMException && (
+                // everything except Firefox
+                e.code === 22 ||
+                // Firefox
+                e.code === 1014 ||
+                // test name field too, because code might not be present
+                // everything except Firefox
+                e.name === 'QuotaExceededError' ||
+                // Firefox
+                e.name === 'NS_ERROR_DOM_QUOTA_REACHED') &&
+                // acknowledge QuotaExceededError only if there's something already stored
+                (storage && storage.length !== 0);
+        }
+    }
+
+    if (storageAvailable('localStorage')) {
+        console.log("Yippee! We can use localStorage awesomeness");
+        document.getElementById("locst").textContent = "Yippee! We can use localStorage awesomeness";
+    }
+    else {
+        console.log("Too bad, no localStorage for us");
+        document.getElementById("locst").textContent = "Too bad, no localStorage for us";
+    }
+}
   </script>
 
   <h3>{{.}}</h3>

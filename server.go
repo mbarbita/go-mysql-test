@@ -76,7 +76,7 @@ func testmsg(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("unmarshal err:", err)
 	}
-	log.Println("wsm after:", wsm)
+	log.Println("wsm (unmarshal):", wsm)
 
 	// response := []byte("response")
 	resp := WsOut{"kill", "bill"}
@@ -84,7 +84,7 @@ func testmsg(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("marshal err:", err)
 	}
-	log.Println("response after:", string(response))
+	log.Println("response (marshal):", string(response))
 
 	err = c.WriteMessage(1, response) // message type = 1
 	if err != nil {
