@@ -14,8 +14,19 @@ import (
 
 // handle func / ; /index.html ; /home
 func home(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "r.Host %v\n", r.Host)
-	fmt.Fprintf(w, "r.URL.Path %v\n", r.URL.Path)
+	// fmt.Fprintf(w, "r.Host %v\n", r.Host)
+	// fmt.Fprintf(w, "r.URL.Path %v\n", r.URL.Path)
+	htmlTpl := template.Must(template.ParseGlob("templates/*.*"))
+	fmt.Println("Templates:", htmlTpl.DefinedTemplates())
+	fmt.Println("Tpl Name:", htmlTpl.Name())
+
+	// Execute template
+	err := htmlTpl.ExecuteTemplate(w, "generic-page.html", nil)
+	// err := htmlTpl.Execute(w, tplData)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError),
+			http.StatusInternalServerError)
+	}
 }
 
 // handle func /test
@@ -31,7 +42,7 @@ func test(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(tplData)
 
 	// Execute template
-	err := htmlTpl.ExecuteTemplate(w, "test.html", tplData[0])
+	err := htmlTpl.ExecuteTemplate(w, "test-page.html", tplData[0])
 	// err := htmlTpl.Execute(w, tplData)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError),
