@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+  <title>ws test</title>
+</head>
+
+<body>
+  <!-- Optional JavaScript -->
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+    integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+    integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
+    crossorigin="anonymous"></script>
+
+  <script type="text/javascript">
+    window.addEventListener("load", function () {
+
+      console.log("WINDOW.LOAD")
+      var ws = new WebSocket("ws://" + document.location.host + "/msg");
+
+      ws.onopen = function (evt) {
+        console.log("ONOPEN");
+
+        var message = {
+        Fa: "msg type",
+        Fb: "msg txt",
+        Fc:  Math.random() * (100 - 0) + 0,
+    // text: document.getElementById("text").value,
+    // id:   clientID,
+    // date: Date.now()
+      };
+
+  ws.send(JSON.stringify(message));
+  console.log("sent:");
+  console.log(message);
+
+        // random = Math.random() * (100 - 0) + 0;
+        // ws.send("Test " + random);
+        // console.log("sent Test " + random)
+      }
+
+      ws.onclose = function (evt) {
+        console.log("ONCLOSE");
+        ws = null;
+      }
+
+      ws.onmessage = function (evt) {
+        console.log("ONMESSAGE");
+        console.log(evt.data)
+
+        var msg = JSON.parse(evt.data);
+        console.log("parsed msg:")
+        console.log(msg)
+
+      }
+
+      ws.onerror = function (evt) {
+        console.log("WS.ONERROR");
+      }
+
+      return false;
+    });
+  </script>
+  <h1>ws test - F12 console</h1>
+
+  <h3 id="locst" onclick="myFunction()">Click me to check local storage.</h3>
+  <script>
+    {{ template "check-storage.js".}}
+  </script>
+
+  <h3>{{.}}</h3>
+</body>
+
+</html>
