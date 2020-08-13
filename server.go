@@ -1,12 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"text/template"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/websocket"
 
 	cfgutils "github.com/mbarbita/golib-cfgutils"
@@ -17,7 +19,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 	// parse templates
 	htmlTpl := template.Must(template.ParseGlob("templates/*.*"))
-	fmt.Println("Templates:", htmlTpl.DefinedTemplates())
+	// fmt.Println("Templates:", htmlTpl.DefinedTemplates())
 	// fmt.Println("Tpl Name:", htmlTpl.Name())
 
 	// data for template
@@ -47,6 +49,7 @@ func test(w http.ResponseWriter, r *http.Request) {
 	var tplData = make(map[string]string)
 	tplData["pagename"] = "test"
 	tplData["wshost1"] = "ws://" + r.Host + "/testmsg"
+	tplData["wsshost1"] = "wss://" + r.Host + "/testmsg"
 	fmt.Println(tplData)
 
 	// Execute template
@@ -112,6 +115,109 @@ func testmsg(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("ws sent response")
+
+	//test db
+	// func dbtest() {
+
+	// var (
+	// 	id   int
+	// 	name string
+	// )
+
+	db, err := sql.Open("mysql", cfgMap["DSN"])
+	if err != nil {
+		panic(err) // Just for example purpose. You should use proper error handling instead of panic
+	}
+	defer db.Close()
+
+	// Open doesn't open a connection. Validate DSN data:
+	log.Println("Pinging...")
+	err = db.Ping()
+	if err != nil {
+		panic(err) // proper error handling instead of panic in your app
+	}
+	log.Println("Pinging OK")
+
+	rows, err := db.Query("select id, name from users where id = ?", 2)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	var data struct {
+		ID   int
+		Name string
+	}
+
+	for rows.Next() {
+		// err := rows.Scan(&id, &name)
+		err := rows.Scan(&data.ID, &data.Name)
+		if err != nil {
+			panic(err)
+		}
+		// log.Println(id, name)
+		log.Println(data)
+	}
+	err = rows.Err()
+	if err != nil {
+		panic(err)
+	}
+
+	// var buffer bytes.Buffer
+	// var namest []string
+	// namest = append(namest, "1", "unu")
+
+	// // json.NewEncoder(&buffer).Encode(&name)
+	// json.NewEncoder(&buffer).Encode(&namest)
+
+	// fmt.Println("\nUsing Encoder:\n" + buffer.String())
+
+	// data := struct {
+	// 	ID   int
+	// 	Name string
+	// }{
+	// 	1,
+	// 	"unu",
+	// }
+	json, err := json.Marshal(data)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(string(json))
+
+	err = c.WriteMessage(1, json) // message type = 1
+	if err != nil {
+		log.Println("ws write err:", err)
+		return
+	}
+
+	// type ColorGroup struct {
+	// 	ID     int
+	// 	Name   string
+	// 	Colors []string
+	// }
+	// group := ColorGroup{
+	// 	ID:     1,
+	// 	Name:   "Reds",
+	// 	Colors: []string{"Crimson", "Red", "Ruby", "Maroon"},
+	// }
+
+	// b, err := json.Marshal(group)
+	// if err != nil {
+	// 	fmt.Println("error:", err)
+	// }
+	// // os.Stdout.Write(b)
+	// fmt.Println(string(b))
+
+	// err = c.WriteMessage(1, b) // message type = 1
+	// if err != nil {
+	// 	log.Println("ws write err:", err)
+	// 	return
+	// }
+
+	// }
+
 }
 
 var cfgMap map[string]string

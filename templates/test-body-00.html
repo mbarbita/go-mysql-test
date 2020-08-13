@@ -3,7 +3,7 @@
 
     console.log("WINDOW.LOAD")
     // var ws = new WebSocket("ws://" + document.location.host + "/msg");
-    var ws = new WebSocket("{{.wshost1}}");
+    var ws = new WebSocket("{{.wsshost1}}");
 
     ws.onopen = function (evt) {
       console.log("ONOPEN");
