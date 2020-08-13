@@ -127,6 +127,14 @@ func main() {
 	http.HandleFunc("/test", test)
 	http.HandleFunc("/testmsg", testmsg)
 
+	go func() {
+		log.Println("TLS Server listening on:", cfgMap["serverTLS"])
+		err := http.ListenAndServeTLS(cfgMap["serverTLS"], "pki/server.crt", "pki/server.key", nil)
+		if err != nil {
+			panic("ListenAndServeTLS: " + err.Error())
+		}
+	}()
+
 	log.Println("Server listening on:", cfgMap["server"])
 	err := http.ListenAndServe(cfgMap["server"], nil)
 	if err != nil {

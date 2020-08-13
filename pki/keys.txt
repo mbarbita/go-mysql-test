@@ -1,0 +1,11 @@
+https://gist.github.com/denji/12b3a568f092ab951456
+
+key:
+openssl genrsa -out server.key 2048
+
+//todo openssl ecparam -name secp521r1 -genkey -param_enc explicit -out server.key
+// -param_enc may be the problem
+
+
+crt:
+openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
