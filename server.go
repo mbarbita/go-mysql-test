@@ -138,7 +138,8 @@ func testmsg(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Pinging OK")
 
-	rows, err := db.Query("select id, name from users where id = ?", 2)
+	// rows, err := db.Query("select id, name from users where id = ?", 2)
+	rows, err := db.Query("select * from users")
 	if err != nil {
 		panic(err)
 	}
@@ -157,67 +158,24 @@ func testmsg(w http.ResponseWriter, r *http.Request) {
 		}
 		// log.Println(id, name)
 		log.Println(data)
+
+		json, err := json.Marshal(data)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(string(json))
+
+		err = c.WriteMessage(1, json) // message type = 1
+		if err != nil {
+			log.Println("ws write err:", err)
+			return
+		}
 	}
 	err = rows.Err()
 	if err != nil {
 		panic(err)
 	}
-
-	// var buffer bytes.Buffer
-	// var namest []string
-	// namest = append(namest, "1", "unu")
-
-	// // json.NewEncoder(&buffer).Encode(&name)
-	// json.NewEncoder(&buffer).Encode(&namest)
-
-	// fmt.Println("\nUsing Encoder:\n" + buffer.String())
-
-	// data := struct {
-	// 	ID   int
-	// 	Name string
-	// }{
-	// 	1,
-	// 	"unu",
-	// }
-	json, err := json.Marshal(data)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(string(json))
-
-	err = c.WriteMessage(1, json) // message type = 1
-	if err != nil {
-		log.Println("ws write err:", err)
-		return
-	}
-
-	// type ColorGroup struct {
-	// 	ID     int
-	// 	Name   string
-	// 	Colors []string
-	// }
-	// group := ColorGroup{
-	// 	ID:     1,
-	// 	Name:   "Reds",
-	// 	Colors: []string{"Crimson", "Red", "Ruby", "Maroon"},
-	// }
-
-	// b, err := json.Marshal(group)
-	// if err != nil {
-	// 	fmt.Println("error:", err)
-	// }
-	// // os.Stdout.Write(b)
-	// fmt.Println(string(b))
-
-	// err = c.WriteMessage(1, b) // message type = 1
-	// if err != nil {
-	// 	log.Println("ws write err:", err)
-	// 	return
-	// }
-
-	// }
-
 }
 
 var cfgMap map[string]string

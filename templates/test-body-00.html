@@ -1,5 +1,5 @@
 <script type="text/javascript">
-  window.addEventListener("load", function () {
+  window.addEventListener("load", function (evt) {
 
     console.log("WINDOW.LOAD")
     // var ws = new WebSocket("ws://" + document.location.host + "/msg");
@@ -39,6 +39,19 @@
       console.log("parsed msg:")
       console.log(msg)
 
+      $("#table1").append("<tr><td class=\"unu\">" + msg.ID + "</td><td class=\"doi\">" + msg.Name + "</td></tr>");
+
+      $("#dataTable tbody").on("click", "tr .unu", function () {
+        console.log($(this).text());
+        // console.log($(this).val());
+      });
+
+      $("#dataTable tbody").on("click", "tr .doi", function () {
+        console.log($(this).text());
+        // console.log($(this).val());
+      });
+
+
     }
 
     ws.onerror = function (evt) {
@@ -49,6 +62,25 @@
   });
 </script>
 <h1>ws test - F12 console</h1>
+
+<table class="table table-striped" id="dataTable">
+  <thead>
+    <tr>
+      <th scope="col">ID</th>
+      <th scope="col">Name</th>
+    </tr>
+  </thead>
+  <tbody id="table1">
+    <!-- <tr>
+      <td>1</td>
+      <td>Mark</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Jacob</td>
+    </tr> -->
+  </tbody>
+</table>
 
 <h3 id="locst" onclick="myFunction()">Click me to check local storage.</h3>
 <script>
