@@ -151,7 +151,6 @@ func testmsg(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for rows.Next() {
-		// err := rows.Scan(&id, &name)
 		err := rows.Scan(&data.ID, &data.Name)
 		if err != nil {
 			panic(err)
