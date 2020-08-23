@@ -17,6 +17,13 @@ import (
 // handle func / ; /index.html ; /home
 func home(w http.ResponseWriter, r *http.Request) {
 
+	// The "/" pattern matches everything, so we need to check
+	// that we're at the root here.
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
 	// parse templates
 	htmlTpl := template.Must(template.ParseGlob("templates/*.*"))
 	// fmt.Println("Templates:", htmlTpl.DefinedTemplates())
@@ -185,10 +192,13 @@ func main() {
 
 	//routes
 	http.HandleFunc("/", home)
-	http.HandleFunc("/index.html", home)
-	http.HandleFunc("/home", home)
+	// http.HandleFunc("/index.html", home)
+	// http.HandleFunc("/home", home)
 	http.HandleFunc("/test", test)
 	http.HandleFunc("/testmsg", testmsg)
+
+	http.Handle("/download/", http.StripPrefix("/download/",
+		http.FileServer(http.Dir("download"))))
 
 	go func() {
 		log.Println("TLS Server listening on:", cfgMap["serverTLS"])
