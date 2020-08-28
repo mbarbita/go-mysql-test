@@ -4,14 +4,21 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"sync"
 	"text/template"
+	"time"
 
+	"github.com/fsnotify/fsnotify"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/websocket"
 
 	cfgutils "github.com/mbarbita/golib-cfgutils"
+	// _ "net/http/pprof"
 )
 
 // handle func / ; /index.html ; /home
@@ -184,11 +191,85 @@ func testmsg(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func dirWatcher2(folders ...string) {
+	time.Sleep(5 * time.Second)
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer watcher.Close()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				log.Println("event:", event)
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					log.Println("modified file:", event.Name)
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Println("error:", err)
+			}
+		}
+	}()
+	for _, folder := range folders {
+		err = watcher.Add(folder)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println("Watching folder for changes:", folder)
+	}
+	wg.Wait()
+}
+
 var cfgMap map[string]string
 
 func main() {
 
+	// If the dir doesn't exist, create it
+
+	if _, err := os.Stat("log"); os.IsNotExist(err) {
+		log.Println("log dir does not exist, creating...")
+		err := os.MkdirAll(filepath.Join("log"), os.ModeDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// If the file doesn't exist, create it, or append to the file
+	tt := "log/" + time.Now().Format("2006-01-02 150405") + ".log"
+	// f, err := os.OpenFile("log/test.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(tt, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	wrt := io.MultiWriter(os.Stdout, f)
+
+	log.SetOutput(wrt)
+	log.Println("Dual log output...")
+
+	// if _, err := f.Write([]byte("appended some data\n")); err != nil {
+	// 	f.Close() // ignore error; Write error takes precedence
+	// 	log.Fatal(err)
+	// }
+	// if err := f.Close(); err != nil {
+	// 	log.Fatal(err)
+	// }
+
 	cfgMap = cfgutils.ReadCfgFile("cfg.ini", false)
+
+	go dirWatcher2("templates")
 
 	//routes
 	http.HandleFunc("/", home)
@@ -209,7 +290,7 @@ func main() {
 	}()
 
 	log.Println("Server listening on:", cfgMap["server"])
-	err := http.ListenAndServe(cfgMap["server"], nil)
+	err = http.ListenAndServe(cfgMap["server"], nil)
 	if err != nil {
 		panic("ListenAndServe err: " + err.Error())
 	}
