@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -32,7 +33,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// parse templates
-	htmlTpl := template.Must(template.ParseGlob("templates/*.*"))
+	// htmlTpl := template.Must(template.ParseGlob("templates/*.*"))
 	// fmt.Println("Templates:", htmlTpl.DefinedTemplates())
 	// fmt.Println("Tpl Name:", htmlTpl.Name())
 
@@ -55,9 +56,9 @@ func home(w http.ResponseWriter, r *http.Request) {
 func test(w http.ResponseWriter, r *http.Request) {
 
 	// parse templates
-	htmlTpl := template.Must(template.ParseGlob("templates/*.*"))
-	fmt.Println("Templates:", htmlTpl.DefinedTemplates())
-	fmt.Println("Tpl Name:", htmlTpl.Name())
+	// htmlTpl := template.Must(template.ParseGlob("templates/*.*"))
+	// fmt.Println("Templates:", htmlTpl.DefinedTemplates())
+	// fmt.Println("Tpl Name:", htmlTpl.Name())
 
 	// data for template
 	var tplData = make(map[string]string)
@@ -191,7 +192,7 @@ func testmsg(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func dirWatcher2(folders ...string) {
+func dirWatcher(folders ...string) {
 	time.Sleep(5 * time.Second)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -202,6 +203,8 @@ func dirWatcher2(folders ...string) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		var lock sync.Mutex
+
 		for {
 			select {
 			case event, ok := <-watcher.Events:
@@ -211,6 +214,12 @@ func dirWatcher2(folders ...string) {
 				log.Println("event:", event)
 				if event.Op&fsnotify.Write == fsnotify.Write {
 					log.Println("modified file:", event.Name)
+					// parse templates
+					lock.Lock()
+					htmlTpl = template.Must(template.ParseGlob("templates/*.*"))
+					fmt.Println("Templates:", htmlTpl.DefinedTemplates())
+					fmt.Println("Tpl Name:", htmlTpl.Name())
+					lock.Unlock()
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
@@ -225,56 +234,56 @@ func dirWatcher2(folders ...string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println("Watching folder for changes:", folder)
+		log.Println("Added folder to watchlist:", folder)
 	}
 	wg.Wait()
 }
 
 var cfgMap map[string]string
+var htmlTpl *template.Template
 
 func main() {
 
-	// If the dir doesn't exist, create it
+	// set dual log
+	dualLog := flag.Bool("logtofile", false, "log to flie too")
+	flag.Parse()
 
-	if _, err := os.Stat("log"); os.IsNotExist(err) {
-		log.Println("log dir does not exist, creating...")
-		err := os.MkdirAll(filepath.Join("log"), os.ModeDir)
+	if *dualLog {
+		// If the dir doesn't exist, create it
+		if _, err := os.Stat("log"); os.IsNotExist(err) {
+			log.Println("log dir does not exist, creating...")
+			err := os.MkdirAll(filepath.Join("log"), os.ModeDir)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		// If the file doesn't exist, create it, or append to the file
+		logFileName := "log/" + time.Now().Format("2006-01-02 150405") + ".log"
+		logFile, err := os.OpenFile(logFileName,
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer logFile.Close()
+		wrt := io.MultiWriter(os.Stdout, logFile)
+		log.SetOutput(wrt)
+		log.Println("Dual log output ON")
+		log.Println("log file:", logFileName)
+
 	}
-
-	// If the file doesn't exist, create it, or append to the file
-	tt := "log/" + time.Now().Format("2006-01-02 150405") + ".log"
-	// f, err := os.OpenFile("log/test.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	f, err := os.OpenFile(tt, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	wrt := io.MultiWriter(os.Stdout, f)
-
-	log.SetOutput(wrt)
-	log.Println("Dual log output...")
-
-	// if _, err := f.Write([]byte("appended some data\n")); err != nil {
-	// 	f.Close() // ignore error; Write error takes precedence
-	// 	log.Fatal(err)
-	// }
-	// if err := f.Close(); err != nil {
-	// 	log.Fatal(err)
-	// }
 
 	cfgMap = cfgutils.ReadCfgFile("cfg.ini", false)
 
-	go dirWatcher2("templates")
+	// parse templates
+	htmlTpl = template.Must(template.ParseGlob("templates/*.*"))
+	fmt.Println("Templates:", htmlTpl.DefinedTemplates())
+	fmt.Println("Tpl Name:", htmlTpl.Name())
+
+	go dirWatcher("templates")
 
 	//routes
 	http.HandleFunc("/", home)
-	// http.HandleFunc("/index.html", home)
-	// http.HandleFunc("/home", home)
 	http.HandleFunc("/test", test)
 	http.HandleFunc("/testmsg", testmsg)
 
@@ -290,7 +299,7 @@ func main() {
 	}()
 
 	log.Println("Server listening on:", cfgMap["server"])
-	err = http.ListenAndServe(cfgMap["server"], nil)
+	err := http.ListenAndServe(cfgMap["server"], nil)
 	if err != nil {
 		panic("ListenAndServe err: " + err.Error())
 	}
