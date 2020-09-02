@@ -44,6 +44,8 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// fmt.Fprintf(w, "r.URL.Path %v\n", r.URL.Path)
 
 	// Execute template
+	// w.Header().Set("Access-Control-Allow-Origin", "*")
+	// w.Header().Set("Access-Control-Allow-Headers", "*")
 	err := htmlTpl.ExecuteTemplate(w, "home-page.html", tplData)
 	// err := htmlTpl.Execute(w, tplData)
 	if err != nil {
